@@ -11,6 +11,7 @@ import datetime
 import const
 import GUI
 from config import host, user, password, db_name, TOKEN_BOT
+from parsers import parser_beautiful_soup
 
 storage = MemoryStorage()
 bot = Bot(token=TOKEN_BOT,
