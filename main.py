@@ -11,7 +11,7 @@ import datetime
 import const
 import GUI
 from config import host, user, password, db_name, TOKEN_BOT
-from parsers import parser_beautiful_soup
+from parsers import parser_selenium
 
 storage = MemoryStorage()
 bot = Bot(token=TOKEN_BOT,
@@ -47,8 +47,10 @@ try:
 
     @dp.message_handler(text='Машины')
     async def car(message: types.Message):
+        await bot.send_photo(message.chat.id, "https://10.img.avito.st/image/1/1.mzKEXLa3N9uk_ltVm3qWWjP_N9E6aTS3Mv8.hQrExpzBoBTeGM3wQ-qCwTO8oObnvB3_7TERO_0_r2w")
         await message.answer("Выберите ценовой сегмент",
                              reply_markup=GUI.car_kb)
+
 
 
     @dp.message_handler(text='Назад')
