@@ -43,7 +43,7 @@ def parse_car():
     # links = browser.find_elements(By.CLASS_NAME, "title-info-title-text")
     # print(links[0].get_attribute("innerHTML"))
 
-parse_car()
+# parse_car()
 
 def parse_image(URL):
     browser = webdriver.Chrome()
@@ -64,3 +64,24 @@ def parse_image(URL):
 
         btn = browser.find_elements(By.CLASS_NAME, "image-frame-controlButton-_vPNK")
         btn[1].click()
+
+    return img_array
+
+
+def test_parse(URL):
+    browser = webdriver.Chrome()
+
+    browser.get(URL)
+
+    links = []
+    cars = browser.find_elements(By.CLASS_NAME, "iva-item-titleStep-pdebR")
+    for i in cars:
+        link = cars[5].find_element(By.TAG_NAME, "a").get_attribute("href")
+        links.append(link)
+
+    for i in links:
+        images = parse_image(i)
+        print(images)
+
+
+test_parse("https://www.avito.ru/saratov/avtomobili?cd=1&radius=50&searchRadius=50")
