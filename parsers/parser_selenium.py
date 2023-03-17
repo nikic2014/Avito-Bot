@@ -27,6 +27,8 @@ def parse_car():
             pass
     print(links_car)
 
+    browser.quit()
+
     obj_car = []
 
     for i in links_car:
@@ -36,8 +38,6 @@ def parse_car():
 
     print(obj_car)
 
-    browser.refresh()
-    browser.quit()
 
 
     # links = browser.find_elements(By.CLASS_NAME, "title-info-title-text")
@@ -51,20 +51,27 @@ def parse_image(URL):
 
     img_array = []
 
+    # if (browser.find_element(By.CLASS_NAME, "closed-warning-linkText-bXEpX"))
+
     while 1:
         try:
             class_image = browser.find_element(By.CLASS_NAME,
                                                "image-frame-wrapper-_NvbY")
             tag_image = class_image.find_element(By.TAG_NAME, "img")
             link_image = tag_image.get_attribute("src")
+            if link_image in img_array:
+                break
             img_array.append(link_image)
             print(link_image)
         except:
             break
 
-        btn = browser.find_elements(By.CLASS_NAME, "image-frame-controlButton-_vPNK")
-        btn[1].click()
-
+        try:
+            btn = browser.find_elements(By.CLASS_NAME, "image-frame-controlButton-_vPNK")
+            btn[1].click()
+            time.sleep(0.5)
+        except:
+            return []
     return img_array
 
 
@@ -72,16 +79,20 @@ def test_parse(URL):
     browser = webdriver.Chrome()
 
     browser.get(URL)
-
     links = []
     cars = browser.find_elements(By.CLASS_NAME, "iva-item-titleStep-pdebR")
     for i in cars:
-        link = cars[5].find_element(By.TAG_NAME, "a").get_attribute("href")
+        link = i.find_element(By.TAG_NAME, "a").get_attribute("href")
         links.append(link)
+
+    browser.quit()
 
     for i in links:
         images = parse_image(i)
-        print(images)
+        if images == []:
+            print("Bug fixed", i)
+            continue
+        time.sleep(3)
 
 
-test_parse("https://www.avito.ru/saratov/avtomobili?cd=1&radius=50&searchRadius=50")
+#test_parse("https://www.avito.ru/saratov/avtomobili?cd=1&radius=50&searchRadius=50")
