@@ -3,6 +3,8 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 # from parsers.parser_beautiful_soup import parse_current_car
+import sqlalchemy as db
+
 
 """
 def parse_car():
@@ -116,12 +118,12 @@ def test_parse(URL):
             browser.quit()
 
             for i in links:
-                images = parse_info(i)
-                if images == []:
+                info = parse_info(i)
+                if info == []:
                     print("Bug fixed", i)
                     continue
                 time.sleep(3)
-                print(images)
+                print(info)
 
             page += 1
         except:

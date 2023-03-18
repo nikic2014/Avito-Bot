@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
-import psycopg2
+#import psycopg2
 import datetime
 import asyncio
 import threading
@@ -14,8 +14,10 @@ from multiprocessing import Process
 
 import const
 import GUI
-from config import host, user, password, db_name, TOKEN_BOT
+from config import TOKEN_BOT
 from parsers import parser_selenium
+import database
+
 
 storage = MemoryStorage()
 bot = Bot(token=TOKEN_BOT,
@@ -23,14 +25,18 @@ bot = Bot(token=TOKEN_BOT,
           )
 dp = Dispatcher(bot, storage=storage)
 
-conaction = psycopg2.connect(
-    host=host,
-    user=user,
-    password=password,
-    database=db_name
-)
+# conaction = psycopg2.connect(
+#     host=host,
+#     user=user,
+#     password=password,
+#     database=db_name
+# )
+
+
+
 
 print("Соединение открыто")
+
 
 
 def BOT():
@@ -74,8 +80,6 @@ def BOT():
 
 def call_parse():
     while True:
-        parser_selenium.test_parse(
-            "https://www.avito.ru/saratov/avtomobili?cd=1&p=&radius=50&searchRadius=50")
         parser_selenium.test_parse("https://www.avito.ru/saratov/avtomobili/do-300000-rubley-ASgCAgECAUXGmgwWeyJmcm9tIjowLCJ0byI6MzAwMDAwfQ?cd=1&p=&radius=50&searchRadius=50")
         asyncio.sleep(79200) ### Парсинг каждые 22 часа
 
@@ -86,4 +90,5 @@ if __name__ == '__main__':
     # p2.start()
     # p1.join()
     # p2.join()
-    call_parse()
+    #call_parse()
+    pass
