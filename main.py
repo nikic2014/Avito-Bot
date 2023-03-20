@@ -81,7 +81,7 @@ def BOT():
 def call_parse():
     while True:
         parser_selenium.test_parse("https://www.avito.ru/saratov/avtomobili/do-300000-rubley-ASgCAgECAUXGmgwWeyJmcm9tIjowLCJ0byI6MzAwMDAwfQ?cd=1&p=&radius=50&searchRadius=50")
-        asyncio.sleep(79200) ### Парсинг каждые 22 часа
+        # asyncio.sleep(79200) ### Парсинг каждые 22 часа
 
 if __name__ == '__main__':
     # p1 = Process(target=BOT)
@@ -90,5 +90,5 @@ if __name__ == '__main__':
     # p2.start()
     # p1.join()
     # p2.join()
-    #call_parse()
+    call_parse()
     pass

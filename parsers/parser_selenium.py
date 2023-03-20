@@ -4,7 +4,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 # from parsers.parser_beautiful_soup import parse_current_car
 import sqlalchemy as db
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+import database
+from database import Cars_ads, Images_cars, engine
 
 """
 def parse_car():
@@ -86,7 +90,6 @@ def parse_info(URL):
             if link_image in img_array:
                 break
             img_array.append(link_image)
-            print(link_image)
         except:
             break
 
@@ -97,23 +100,31 @@ def parse_info(URL):
             time.sleep(0.5)
         except:
             return []
+
     return (img_array, title, price, description)
 
 
 def test_parse(URL):
-    page = 30
+    page = 1
     while True:
         try:
             URL = str(URL).replace("p=", f"p={page}")
 
             browser = webdriver.Chrome()
             browser.get(URL)
+            time.sleep(5)
 
             links = []
-            cars = browser.find_elements(By.CLASS_NAME, "iva-item-titleStep-pdebR")
+            cars = browser.find_elements(By.CLASS_NAME,
+                                         "iva-item-titleStep-pdebR")
             for i in cars:
                 link = i.find_element(By.TAG_NAME, "a").get_attribute("href")
-                links.append(link)
+                with Session(engine) as session:
+                    s = select(Cars_ads).where(Cars_ads.link == link)
+                    result = session.execute(s).fetchone()
+
+                if result is None:
+                    links.append(link)
 
             browser.quit()
 
@@ -122,9 +133,27 @@ def test_parse(URL):
                 if info == []:
                     print("Bug fixed", i)
                     continue
-                time.sleep(3)
-                print(info)
 
-            page += 1
-        except:
-            break
+                ins = database.insert(Cars_ads).values(link=i,
+                                                       title=info[1],
+                                                       price=info[2],
+                                                       description=info[3])
+                compiled = ins.compile()
+                result = database.conaction.execute(ins)
+                database.conaction.commit()
+
+                for j in info[0]:
+                    ins = database.insert(Images_cars).values(fk_link=i,
+                                                              link=j)
+                    compiled = ins.compile()
+                    result = database.conaction.execute(ins)
+                    database.conaction.commit()
+
+                print(info)
+                time.sleep(3)
+
+                page += 1
+        except Exception as ex_:
+            print('Bug', ex_)
+            exit(0)
+

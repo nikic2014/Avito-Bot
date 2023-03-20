@@ -27,11 +27,12 @@ class Images_cars(BaseClass):
 
 BaseClass.metadata.create_all(engine)
 
-ins = insert(Images_cars).values(["a","b"])
-compiled = ins.compile()
-print(compiled.params)
-result = conaction.execute(ins)
-conaction.commit()
+# ins = insert(Images_cars).values(["a","b"])
+# compiled = ins.compile()
+# print(compiled.params)
+# result = conaction.execute(ins)
+#
+# conaction.commit()
 
 
 
