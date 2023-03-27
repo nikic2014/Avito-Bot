@@ -2,54 +2,12 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-# from parsers.parser_beautiful_soup import parse_current_car
-import sqlalchemy as db
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 import database
 from database import Cars_ads, Images_cars, engine
 
-"""
-def parse_car():
-    browser = webdriver.Chrome()
-
-    URL = "https://www.avito.ru/saratov/avtomobili?cd=1&radius=50&searchRadius=50"
-    browser.get(URL)
-
-    step1 = browser.find_element(By.CLASS_NAME, "index-content-_KxNP")
-    step2 = step1.find_element(By.CLASS_NAME, "index-root-KVurS")
-    step3 = step2.find_element(By.CLASS_NAME, "items-items-kAJAg")
-
-    cars = step3.find_elements(By.TAG_NAME, "div")
-    links_car = []
-
-    for i in cars:
-        try:
-            links_car.append(i.find_element(By.CLASS_NAME,
-                                            "iva-item-content-rejJg").find_element(
-                By.TAG_NAME, "a").get_attribute("href"))
-        except Exception as ex:
-            #print(ex)
-            pass
-    print(links_car)
-
-    browser.quit()
-
-    obj_car = []
-
-    for i in links_car:
-        current_car = parse_current_car(i)
-        obj_car.append(current_car)
-        print(current_car)
-
-    print(obj_car)
-
-
-
-    # links = browser.find_elements(By.CLASS_NAME, "title-info-title-text")
-    # print(links[0].get_attribute("innerHTML"))
-"""
 
 
 def parse_info(URL):
@@ -61,7 +19,6 @@ def parse_info(URL):
     title = browser.find_element(By.CLASS_NAME,
                                  "title-info-title-text").get_attribute(
         "innerHTML")
-    print(title)
 
     description = None
     try:
@@ -74,12 +31,10 @@ def parse_info(URL):
                                            "style-item-description"
                                            "-html-qCwUL").find_element(
             By.TAG_NAME, "p").get_attribute("innerHTML")
-    print(description)
 
     price = browser.find_element(By.CLASS_NAME,
                                  "style-price-value-main-TIg6u").find_element(
         By.TAG_NAME, "span").get_attribute("content")
-    print(price)
 
     while 1:
         try:
@@ -149,11 +104,36 @@ def test_parse(URL):
                     result = database.conaction.execute(ins)
                     database.conaction.commit()
 
-                print(info)
                 time.sleep(3)
 
                 page += 1
         except Exception as ex_:
             print('Bug', ex_)
             exit(0)
+
+def check_closed(URL):
+    browser = webdriver.Chrome()
+    browser.get(URL)
+    try:
+        browser.find_element(By.CLASS_NAME, "closed-warning-content-_f4_B")
+        return True
+    except:
+        return False
+
+def drop_closed_ads():
+    s = select(database.Cars_ads.link)
+    result = database.conaction.execute(s).fetchall()
+    for i in result:
+        if check_closed(i[0]):
+            del_photo = delete(database.Images_cars).where(
+                Images_cars.fk_link == i[0])
+            del_car = delete(database.Cars_ads).where(
+                Cars_ads.link == i[0])
+
+            database.conaction.execute(del_photo)
+            database.conaction.execute(del_car)
+            database.conaction.commit()
+
+
+        time.sleep(5)
 
