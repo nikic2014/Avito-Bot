@@ -1,6 +1,8 @@
 from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
     InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.callback_data import CallbackData
+
 import const
 
 try:
@@ -35,16 +37,14 @@ try:
     car_kb.add(high_price)
     car_kb.add(button_back)
 
-    # создание inline меню для car
-    # time_kb = InlineKeyboardMarkup(row_width=1)
-    # day_button = InlineKeyboardButton(const.day, callback_data=const.day)
-    # week_button = InlineKeyboardButton(const.week, callback_data=const.week)
-    # month_button = InlineKeyboardButton(const.month, callback_data=const.month)
-    # year_button = InlineKeyboardButton(const.year, callback_data=const.year)
-    # time_kb.add(day_button)
-    # time_kb.add(week_button)
-    # time_kb.add(month_button)
-    # time_kb.add(year_button)
+    # пример inline меню для car
+    # inline_car_kb = InlineKeyboardMarkup(row_width=2)
+    # next_photo_button = InlineKeyboardButton("Photo ▶", callback_data="->")
+    # previous_photo_button = InlineKeyboardButton("◀ Photo", callback_data="<-")
+    # next_car_button = InlineKeyboardButton("Car ▶", callback_data="->")
+    # previous_car_button = InlineKeyboardButton("◀ Car", callback_data="<-")
+    # inline_car_kb.add(previous_photo_button, next_photo_button)
+    # inline_car_kb.add(previous_car_button, next_car_button)
 
 except:
     print('Exept in GUI')
