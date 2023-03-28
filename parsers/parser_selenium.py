@@ -9,8 +9,10 @@ import database
 from database import Cars_ads, Images_cars, engine
 
 
-
 def parse_info(URL):
+    print("Зашли в функцию парсинга информации о новых объявлениях")
+    print(f"Получаем данные о машине: {URL}")
+
     browser = webdriver.Chrome()
     browser.get(URL)
 
@@ -20,17 +22,26 @@ def parse_info(URL):
                                  "title-info-title-text").get_attribute(
         "innerHTML")
 
-    description = None
+    description = ""
     try:
         description = browser.find_element(By.CLASS_NAME,
                                            "style-item-description"
                                            "-text-mc3G6").find_element(
             By.TAG_NAME, "p").get_attribute("innerHTML")
     except:
-        description = browser.find_element(By.CLASS_NAME,
-                                           "style-item-description"
-                                           "-html-qCwUL").find_element(
-            By.TAG_NAME, "p").get_attribute("innerHTML")
+        try:
+            p = browser.find_element(By.CLASS_NAME,
+                                     "style-item-description"
+                                     "-html-qCwUL").find_elements(
+                By.TAG_NAME, "p")
+
+            for i in p:
+                description += i.get_attribute("innerHTML")
+        except:
+            description = browser.find_element(By.CLASS_NAME,
+                                               "style-item-description"
+                                               "-html-qCwUL").get_attribute(
+                "innerHTML")
 
     price = browser.find_element(By.CLASS_NAME,
                                  "style-price-value-main-TIg6u").find_element(
@@ -60,12 +71,17 @@ def parse_info(URL):
 
 
 def test_parse(URL):
-    page = 1
-    while True:
+    print("Зашли в функцию пасинга списка объявлений")
+    browser = webdriver.Chrome()
+    browser.get(URL)
+
+    last = browser.find_elements(By.CLASS_NAME, "pagination-item-JJq_j")
+    last = int(last[-2].get_attribute("innerHTML"))
+    for page in range(1, last + 1):
         try:
             URL = str(URL).replace("p=", f"p={page}")
+            print(f"Находимся на странице: {page}")
 
-            browser = webdriver.Chrome()
             browser.get(URL)
             time.sleep(5)
 
@@ -86,7 +102,11 @@ def test_parse(URL):
             for i in links:
                 info = parse_info(i)
                 if info == []:
-                    print("Bug fixed", i)
+                    print(
+                        "Машина или продана, или в ее "
+                        "изображениях встретилось видео",
+                        i)
+                    time.sleep(3)
                     continue
 
                 ins = database.insert(Cars_ads).values(link=i,
@@ -104,6 +124,7 @@ def test_parse(URL):
                     result = database.conaction.execute(ins)
                     database.conaction.commit()
 
+                print(f"Машины и ее фотографии добавлены в базу данных {i}")
                 time.sleep(3)
 
                 page += 1
@@ -111,16 +132,31 @@ def test_parse(URL):
             print('Bug', ex_)
             exit(0)
 
+    print("Закончили парсинг всех странц")
+
+
 def check_closed(URL):
+    print("Зашли в функцию проверки закрытия объявляения\n", URL)
+
     browser = webdriver.Chrome()
     browser.get(URL)
     try:
         browser.find_element(By.CLASS_NAME, "closed-warning-content-_f4_B")
+        print("Машина будет удалена")
         return True
     except:
-        return False
+        try:
+            browser.find_element(By.CLASS_NAME, "page-title-count-wQ7pG")
+            print("Машина будет удалена")
+            return True
+        except:
+            print("Машина не будет удалена")
+            return False
+
 
 def drop_closed_ads():
+    print("Зашли в функцию удалиния старых машин")
+
     s = select(database.Cars_ads.link)
     result = database.conaction.execute(s).fetchall()
     for i in result:
@@ -134,6 +170,8 @@ def drop_closed_ads():
             database.conaction.execute(del_car)
             database.conaction.commit()
 
+            print(f"Машина с адресом: {i[0]} удалена")
 
         time.sleep(5)
 
+    print("Старые машины удалены")

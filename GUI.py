@@ -45,6 +45,5 @@ try:
     # previous_car_button = InlineKeyboardButton("◀ Car", callback_data="<-")
     # inline_car_kb.add(previous_photo_button, next_photo_button)
     # inline_car_kb.add(previous_car_button, next_car_button)
-
 except:
     print('Exept in GUI')

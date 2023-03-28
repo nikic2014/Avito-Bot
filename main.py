@@ -11,6 +11,9 @@ from config import TOKEN_BOT
 from parsers import parser_selenium
 import database
 from parsers.parser_selenium import drop_closed_ads
+# import MyLogging
+# from MyLogging import bot_loger
+
 
 storage = MemoryStorage()
 bot = Bot(token=TOKEN_BOT,
@@ -35,11 +38,13 @@ def BOT():
                                  "в Саратове.</em>",
                                  reply_markup=GUI.main_kb,
                                  parse_mode="HTML")
+            # bot_loger.info("Стартовое сообщение успешно отправлено")
 
         @dp.message_handler(text='Квартиры')
         async def apartment(message: types.Message):
             await message.answer("Выберите количество комнат",
                                  reply_markup=GUI.apartment_kb)
+            # bot_loger.info("Кнопка квартиры успешно обработана")
 
         @dp.message_handler(text='Машины')
         async def car(message: types.Message):
