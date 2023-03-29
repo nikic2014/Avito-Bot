@@ -2,18 +2,25 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium_stealth import stealth
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 import database
 from database import Cars_ads, Images_cars, engine
 
+option = webdriver.ChromeOptions()
+option.add_argument("start-maximized")
+option.add_experimental_option("excludeSwitches", ["enable-automation"])
+option.add_experimental_option("useAutomationExtension", False)
+driver = webdriver.Chrome(options=option)
+
 
 def parse_info(URL):
     print("Зашли в функцию парсинга информации о новых объявлениях")
     print(f"Получаем данные о машине: {URL}")
 
-    browser = webdriver.Chrome()
+    browser = driver
     browser.get(URL)
 
     img_array = []
@@ -72,7 +79,7 @@ def parse_info(URL):
 
 def test_parse(URL):
     print("Зашли в функцию пасинга списка объявлений")
-    browser = webdriver.Chrome()
+    browser = driver
     browser.get(URL)
 
     last = browser.find_elements(By.CLASS_NAME, "pagination-item-JJq_j")
@@ -138,7 +145,7 @@ def test_parse(URL):
 def check_closed(URL):
     print("Зашли в функцию проверки закрытия объявляения\n", URL)
 
-    browser = webdriver.Chrome()
+    browser = driver
     browser.get(URL)
     try:
         browser.find_element(By.CLASS_NAME, "closed-warning-content-_f4_B")

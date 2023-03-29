@@ -1,16 +1,21 @@
+import multiprocessing
+import time
+
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, \
     InputMedia
 from aiogram.utils.callback_data import CallbackData
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 from sqlalchemy import select
 
 import GUI
+import config
+import const
 from config import TOKEN_BOT
-from parsers import parser_selenium
+# from parsers import parser_selenium
 import database
-from parsers.parser_selenium import drop_closed_ads
+# from parsers.parser_selenium import drop_closed_ads
 # import MyLogging
 # from MyLogging import bot_loger
 
@@ -22,13 +27,13 @@ bot = Bot(token=TOKEN_BOT,
 dp = Dispatcher(bot, storage=storage)
 
 cars_list = {}
-cars_list_up_300 = {}
-cars_list_up_1000 = {}
-cars_list_up_INF = {}
 photo_list = {}
 
 
-def BOT():
+def BOT(cars_list_up_300,
+        cars_list_up_1000,
+        cars_list_up_INF):
+
     try:
         @dp.message_handler(commands=['start'])
         async def start(message: types.Message):
@@ -86,25 +91,26 @@ def BOT():
 
         @dp.message_handler(text='До 300 тыс')
         async def cars_up_to_300(message: types.Message):
-            global cars_list
+            global cars_list, cars_list_up_300
             cars_list = cars_list_up_300
             await cars_menu(message)
 
         @dp.message_handler(text='От 300 тыс до 1 млн')
         async def cars_up_to_milion(message: types.Message):
-            global cars_list
+            global cars_list, cars_list_up_1000
             cars_list = cars_list_up_1000
             await cars_menu(message)
 
         @dp.message_handler(text='Больше 1 млн')
         async def cars_up_to_milion(message: types.Message):
-            global cars_list
+            global cars_list, cars_list_up_INF
             cars_list = cars_list_up_INF
             await cars_menu(message)
 
         async def cars_menu(message: types.Message):
-            global photo_list
+            global photo_list, cars_list
 
+            print(cars_list)
             caption = f"Автомобиль: {cars_list[0][1]}\n" \
                       f"Цена: {cars_list[0][2]}\n" \
                       f"Описание:\n{cars_list[0][3]}"
@@ -166,36 +172,84 @@ def BOT():
     executor.start_polling(dp, skip_updates='true')
 
 
-def write_lists():
-    global cars_list_up_300, cars_list_up_1000, cars_list_up_INF
+def write_lists(l1, l2, l3):
+    #
+    # s = select(database.Cars_ads).where(database.Cars_ads.price <= 300000)
+    # result = database.conaction.execute(s).fetchall()
+    # for i in result:
+    #     l1.append(i)
+    #
+    # s = select(database.Cars_ads).where(database.Cars_ads.price <= 1000000)
+    # result = database.conaction.execute(s).fetchall()
+    # for i in result:
+    #     l2.append(i)
+    #
+    #
+    # s = select(database.Cars_ads).where(database.Cars_ads.price > 1000000)
+    # result = database.conaction.execute(s).fetchall()
+    # for i in result:
+    #     l3.append(i)
 
-    s = select(database.Cars_ads).where(database.Cars_ads.price <= 300000)
-    result = database.conaction.execute(s).fetchall()
-    cars_list_up_300 = result
-
-    s = select(database.Cars_ads).where(database.Cars_ads.price <= 1000000)
-    result = database.conaction.execute(s).fetchall()
-    cars_list_up_1000 = result
-
-    s = select(database.Cars_ads).where(database.Cars_ads.price > 1000000)
-    result = database.conaction.execute(s).fetchall()
-    cars_list_up_INF = result
+    print("Списки машин")
+    print(l1)
+    print(l2)
+    print(l3)
 
 
-def call_parse():
-    while True:
-        drop_closed_ads()
-        parser_selenium.test_parse("https://www.avito.ru/saratov/"
-                                   "avtomobili?cd=1&radius=0&searchRadius=0")
-        write_lists()
+# def call_parse(l1, l2, l3):
+#     while True:
+#         write_lists(l1, l2, l3)
+#         print("Данные из базы данных записаны в бота")
+#         drop_closed_ads()
+#         parser_selenium.test_parse("https://www.avito.ru/saratov/"
+#                                    "avtomobili?cd=1&radius=0&searchRadius=0")
 
+def test1(l):
+    get_info(l)
+
+def test2(l):
+    get_info(l)
+
+def get_info(l):
+    l.acquire()
+    engine = database.db.create_engine(
+        f"postgresql://{config.user}:{config.password}@localhost/{config.db_name}",
+        pool_pre_ping=True)
+    conaction = engine.connect()
+    metadata = database.db.MetaData()
+    database.BaseClass.metadata.create_all(engine)
+
+    s = select(database.Cars_ads.link)
+    result = conaction.execute(s).fetchall()
+    name_process = multiprocessing.current_process().name
+    print(name_process, result)
+    conaction.close()
+    l.release()
 
 if __name__ == '__main__':
-    p1 = Process(target=BOT)
-    p1.start()
-    p2 = Process(target=call_parse())
-    p2.start()
-    p1.join()
-    p2.join()
-    call_parse()
-    pass
+    with Manager() as manager:
+        lock = multiprocessing.Lock()
+
+        p1 = Process(target=test1, args=(lock,))
+        p1.start()
+        p2 = Process(target=test2, args=(lock,))
+        p2.start()
+        p1.join()
+        p2.join()
+
+        cars_list_up_300 = manager.list()
+        cars_list_up_1000 = manager.list()
+        cars_list_up_INF = manager.list()
+
+
+        # p1 = Process(target=BOT, args=(cars_list_up_300,
+        #                                cars_list_up_1000,
+        #                                cars_list_up_INF))
+        # p1.start()
+        # p2 = Process(target=call_parse, args=(cars_list_up_300,
+        #                                       cars_list_up_1000,
+        #                                       cars_list_up_INF))
+        # p2.start()
+        # p1.join()
+        # p2.join()
+        pass
