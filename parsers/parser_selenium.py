@@ -7,7 +7,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 import database
-from database import Cars_ads, Images_cars, engine
+from database import Cars_ads, Images_cars
 
 option = webdriver.ChromeOptions()
 option.add_argument("start-maximized")
@@ -77,7 +77,7 @@ def parse_info(URL):
     return (img_array, title, price, description)
 
 
-def test_parse(URL):
+def test_parse(URL, l):
     print("Зашли в функцию пасинга списка объявлений")
     browser = driver
     browser.get(URL)
@@ -97,11 +97,11 @@ def test_parse(URL):
                                          "iva-item-titleStep-pdebR")
             for i in cars:
                 link = i.find_element(By.TAG_NAME, "a").get_attribute("href")
-                with Session(engine) as session:
-                    s = select(Cars_ads).where(Cars_ads.link == link)
-                    result = session.execute(s).fetchone()
 
-                if result is None:
+                s = select(Cars_ads).where(Cars_ads.link == link)
+                result = database.get_cars(s, l)
+
+                if result == []:
                     links.append(link)
 
             browser.quit()
@@ -120,16 +120,12 @@ def test_parse(URL):
                                                        title=info[1],
                                                        price=info[2],
                                                        description=info[3])
-                compiled = ins.compile()
-                result = database.conaction.execute(ins)
-                database.conaction.commit()
+                database.set_car(ins)
 
                 for j in info[0]:
                     ins = database.insert(Images_cars).values(fk_link=i,
                                                               link=j)
-                    compiled = ins.compile()
-                    result = database.conaction.execute(ins)
-                    database.conaction.commit()
+                    database.set_image(ins, l)
 
                 print(f"Машины и ее фотографии добавлены в базу данных {i}")
                 time.sleep(3)
@@ -161,11 +157,11 @@ def check_closed(URL):
             return False
 
 
-def drop_closed_ads():
+def drop_closed_ads(l):
     print("Зашли в функцию удалиния старых машин")
 
     s = select(database.Cars_ads.link)
-    result = database.conaction.execute(s).fetchall()
+    result = database.get_cars(s, l)
     for i in result:
         if check_closed(i[0]):
             del_photo = delete(database.Images_cars).where(
@@ -173,9 +169,8 @@ def drop_closed_ads():
             del_car = delete(database.Cars_ads).where(
                 Cars_ads.link == i[0])
 
-            database.conaction.execute(del_photo)
-            database.conaction.execute(del_car)
-            database.conaction.commit()
+            database.set_image(del_photo, l)
+            database.set_car(del_car, l)
 
             print(f"Машина с адресом: {i[0]} удалена")
 

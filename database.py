@@ -24,3 +24,62 @@ class Images_cars(BaseClass):
 
 
 print("Подключение к базе прошло успешно")
+
+
+def get_cars(req, lock):
+    lock.acquire()
+    engine = db.create_engine(
+        f"postgresql://{user}:{password}@localhost/{db_name}",
+        pool_pre_ping=True)
+    conaction = engine.connect()
+    BaseClass.metadata.create_all(engine)
+
+    result = conaction.execute(req).fetchall()
+    conaction.close()
+    lock.release()
+
+    return result
+
+
+def get_images(req, lock):
+    lock.acquire()
+    engine = db.create_engine(
+        f"postgresql://{user}:{password}@localhost/{db_name}",
+        pool_pre_ping=True)
+    conaction = engine.connect()
+    BaseClass.metadata.create_all(engine)
+
+    result = conaction.execute(req).fetchall()
+    conaction.close()
+    lock.release()
+
+    return result
+
+def set_car(req, lock):
+    engine = db.create_engine(
+        f"postgresql://{user}:{password}@localhost/{db_name}",
+        pool_pre_ping=True)
+    conaction = engine.connect()
+    BaseClass.metadata.create_all(engine)
+
+    result = conaction.execute(req)
+    conaction.commit()
+    conaction.close()
+    lock.release()
+
+    return result
+
+
+def set_image(req, lock):
+    engine = db.create_engine(
+        f"postgresql://{user}:{password}@localhost/{db_name}",
+        pool_pre_ping=True)
+    conaction = engine.connect()
+    BaseClass.metadata.create_all(engine)
+
+    result = conaction.execute(req)
+    conaction.commit()
+    conaction.close()
+    lock.release()
+
+    return result

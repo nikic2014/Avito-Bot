@@ -1,3 +1,4 @@
+import datetime
 import multiprocessing
 import time
 
@@ -13,9 +14,9 @@ import GUI
 import config
 import const
 from config import TOKEN_BOT
-# from parsers import parser_selenium
+from parsers import parser_selenium
 import database
-# from parsers.parser_selenium import drop_closed_ads
+from parsers.parser_selenium import drop_closed_ads
 # import MyLogging
 # from MyLogging import bot_loger
 
@@ -32,7 +33,8 @@ photo_list = {}
 
 def BOT(cars_list_up_300,
         cars_list_up_1000,
-        cars_list_up_INF):
+        cars_list_up_INF,
+        lock):
 
     try:
         @dp.message_handler(commands=['start'])
@@ -118,7 +120,7 @@ def BOT(cars_list_up_300,
 
             s = select(database.Images_cars.link).where(
                 database.Images_cars.fk_link == cars_list[0][0])
-            result = database.conaction.execute(s).fetchall()
+            result = database.get_images(s, lock)
             photo_list = result
 
             await bot.send_photo(
@@ -146,7 +148,7 @@ def BOT(cars_list_up_300,
                 if page_photo == 0:
                     s = select(database.Images_cars.link).where(
                         database.Images_cars.fk_link == cars_list[page_car][0])
-                    result = database.conaction.execute(s).fetchall()
+                    result = database.get_images(s, lock)
                     photo_list = result
 
                 caption = f"Автомобиль: {cars_list[page_car][1]}\n" \
@@ -172,23 +174,22 @@ def BOT(cars_list_up_300,
     executor.start_polling(dp, skip_updates='true')
 
 
-def write_lists(l1, l2, l3):
-    #
-    # s = select(database.Cars_ads).where(database.Cars_ads.price <= 300000)
-    # result = database.conaction.execute(s).fetchall()
-    # for i in result:
-    #     l1.append(i)
-    #
-    # s = select(database.Cars_ads).where(database.Cars_ads.price <= 1000000)
-    # result = database.conaction.execute(s).fetchall()
-    # for i in result:
-    #     l2.append(i)
-    #
-    #
-    # s = select(database.Cars_ads).where(database.Cars_ads.price > 1000000)
-    # result = database.conaction.execute(s).fetchall()
-    # for i in result:
-    #     l3.append(i)
+def write_lists(l1, l2, l3, lock):
+    s = select(database.Cars_ads).where(database.Cars_ads.price <= 300000)
+    result = database.get_cars(s, lock)
+    for i in result:
+        l1.append(i)
+
+    s = select(database.Cars_ads).where(database.Cars_ads.price <= 1000000)
+    result = database.get_cars(s, lock)
+    for i in result:
+        l2.append(i)
+
+
+    s = select(database.Cars_ads).where(database.Cars_ads.price > 1000000)
+    result = database.get_cars(s, lock)
+    for i in result:
+        l3.append(i)
 
     print("Списки машин")
     print(l1)
@@ -196,60 +197,34 @@ def write_lists(l1, l2, l3):
     print(l3)
 
 
-# def call_parse(l1, l2, l3):
-#     while True:
-#         write_lists(l1, l2, l3)
-#         print("Данные из базы данных записаны в бота")
-#         drop_closed_ads()
-#         parser_selenium.test_parse("https://www.avito.ru/saratov/"
-#                                    "avtomobili?cd=1&radius=0&searchRadius=0")
+def call_parse(l1, l2, l3, lock):
+    while True:
+        write_lists(l1, l2, l3, lock)
+        print("Данные из базы данных записаны в бота")
+        drop_closed_ads(lock)
+        parser_selenium.test_parse("https://www.avito.ru/saratov/"
+                                   "avtomobili?cd=1&radius=0&searchRadius=0",
+                                   lock)
 
-def test1(l):
-    get_info(l)
-
-def test2(l):
-    get_info(l)
-
-def get_info(l):
-    l.acquire()
-    engine = database.db.create_engine(
-        f"postgresql://{config.user}:{config.password}@localhost/{config.db_name}",
-        pool_pre_ping=True)
-    conaction = engine.connect()
-    metadata = database.db.MetaData()
-    database.BaseClass.metadata.create_all(engine)
-
-    s = select(database.Cars_ads.link)
-    result = conaction.execute(s).fetchall()
-    name_process = multiprocessing.current_process().name
-    print(name_process, result)
-    conaction.close()
-    l.release()
 
 if __name__ == '__main__':
     with Manager() as manager:
         lock = multiprocessing.Lock()
 
-        p1 = Process(target=test1, args=(lock,))
-        p1.start()
-        p2 = Process(target=test2, args=(lock,))
-        p2.start()
-        p1.join()
-        p2.join()
-
         cars_list_up_300 = manager.list()
         cars_list_up_1000 = manager.list()
         cars_list_up_INF = manager.list()
 
-
-        # p1 = Process(target=BOT, args=(cars_list_up_300,
-        #                                cars_list_up_1000,
-        #                                cars_list_up_INF))
-        # p1.start()
-        # p2 = Process(target=call_parse, args=(cars_list_up_300,
-        #                                       cars_list_up_1000,
-        #                                       cars_list_up_INF))
-        # p2.start()
-        # p1.join()
-        # p2.join()
+        p1 = Process(target=BOT, args=(cars_list_up_300,
+                                       cars_list_up_1000,
+                                       cars_list_up_INF,
+                                       lock))
+        p2 = Process(target=call_parse, args=(cars_list_up_300,
+                                              cars_list_up_1000,
+                                              cars_list_up_INF,
+                                              lock))
+        p1.start()
+        p2.start()
+        p1.join()
+        p2.join()
         pass
