@@ -16,11 +16,12 @@ class Cars_ads(BaseClass):
     price = Column(Integer)
     description = Column(Text)
 
+
 class Images_cars(BaseClass):
     __tablename__ = 'Images_car'
 
     fk_link = Column(Text, ForeignKey('Cars.link'))
-    link = Column(Text,primary_key=True)
+    link = Column(Text, primary_key=True)
 
 
 print("Подключение к базе прошло успешно")
@@ -54,6 +55,7 @@ def get_images(req, lock):
     lock.release()
 
     return result
+
 
 def set_car(req, lock):
     engine = db.create_engine(

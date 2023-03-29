@@ -18,7 +18,7 @@ from parsers import parser_selenium
 import database
 from parsers.parser_selenium import drop_closed_ads
 # import MyLogging
-# from MyLogging import bot_loger
+from MyLogging import bot_loger
 
 
 storage = MemoryStorage()
@@ -35,6 +35,7 @@ def BOT(cars_list_up_300,
         cars_list_up_1000,
         cars_list_up_INF,
         lock):
+    bot_loger.info(f"Зашли в функцию BOT")
 
     try:
         @dp.message_handler(commands=['start'])
@@ -112,7 +113,6 @@ def BOT(cars_list_up_300,
         async def cars_menu(message: types.Message):
             global photo_list, cars_list
 
-            print(cars_list)
             caption = f"Автомобиль: {cars_list[0][1]}\n" \
                       f"Цена: {cars_list[0][2]}\n" \
                       f"Описание:\n{cars_list[0][3]}"
@@ -165,16 +165,15 @@ def BOT(cars_list_up_300,
             except IndexError:
                 await callback.answer("Вы дошли до конца")
 
-
     except Exception as ex_:
-        print("Error while working with Bot:", ex_)
-    except:
-        print('Exept in main.py')
+        bot_loger.error("Error while working with BOT:", ex_, traceback=True)
 
     executor.start_polling(dp, skip_updates='true')
-
+    bot_loger.info("Бот успешно запущен")
 
 def write_lists(l1, l2, l3, lock):
+    bot_loger.info("Зашли в функцию write_lists")
+
     s = select(database.Cars_ads).where(database.Cars_ads.price <= 300000)
     result = database.get_cars(s, lock)
     for i in result:
@@ -185,30 +184,35 @@ def write_lists(l1, l2, l3, lock):
     for i in result:
         l2.append(i)
 
-
     s = select(database.Cars_ads).where(database.Cars_ads.price > 1000000)
     result = database.get_cars(s, lock)
     for i in result:
         l3.append(i)
 
-    print("Списки машин")
-    print(l1)
-    print(l2)
-    print(l3)
+    bot_loger.info("Зашли записали информацию о всех машинах")
+    bot_loger.info(f"Первый список машин {l1}")
+    bot_loger.info(f"Второй список машин {l2}")
+    bot_loger.info(f"Третий список машин {l3}")
 
 
 def call_parse(l1, l2, l3, lock):
     while True:
+        bot_loger.info("Запуск фукнции call_parse")
+
         write_lists(l1, l2, l3, lock)
-        print("Данные из базы данных записаны в бота")
+
         drop_closed_ads(lock)
         parser_selenium.test_parse("https://www.avito.ru/saratov/"
                                    "avtomobili?cd=1&radius=0&searchRadius=0",
                                    lock)
 
+        bot_loger.info("Прошла одна итерация call_parse")
+
 
 if __name__ == '__main__':
     with Manager() as manager:
+        bot_loger.info("Запуск функции main")
+
         lock = multiprocessing.Lock()
 
         cars_list_up_300 = manager.list()
@@ -227,4 +231,4 @@ if __name__ == '__main__':
         p2.start()
         p1.join()
         p2.join()
-        pass
+    pass
