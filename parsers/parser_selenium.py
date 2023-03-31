@@ -104,8 +104,6 @@ def test_parse(URL, l):
                 if result == []:
                     links.append(link)
 
-            browser.quit()
-
             for i in links:
                 info = parse_info(i)
                 if info == []:
@@ -120,7 +118,7 @@ def test_parse(URL, l):
                                                        title=info[1],
                                                        price=info[2],
                                                        description=info[3])
-                database.set_car(ins)
+                database.set_car(ins, l)
 
                 for j in info[0]:
                     ins = database.insert(Images_cars).values(fk_link=i,
@@ -132,6 +130,7 @@ def test_parse(URL, l):
 
                 page += 1
         except Exception as ex_:
+            print()
             print('Bug', ex_)
             exit(0)
 
@@ -163,6 +162,7 @@ def drop_closed_ads(l):
     s = select(database.Cars_ads.link)
     result = database.get_cars(s, l)
     for i in result:
+        continue
         if check_closed(i[0]):
             del_photo = delete(database.Images_cars).where(
                 Images_cars.fk_link == i[0])

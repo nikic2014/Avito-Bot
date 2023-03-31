@@ -8,6 +8,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, \
 from aiogram.utils.callback_data import CallbackData
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from multiprocessing import Process, Manager
+
+from aiogram.utils.exceptions import BadRequest
 from sqlalchemy import select
 
 import GUI
@@ -96,27 +98,38 @@ def BOT(cars_list_up_300,
         async def cars_up_to_300(message: types.Message):
             global cars_list, cars_list_up_300
             cars_list = cars_list_up_300
+            print(len(cars_list))
+            bot_loger.info(f"Длина 1 списка машин:"
+                           f"{len(cars_list)}")
             await cars_menu(message)
 
         @dp.message_handler(text='От 300 тыс до 1 млн')
         async def cars_up_to_milion(message: types.Message):
             global cars_list, cars_list_up_1000
             cars_list = cars_list_up_1000
+            print(len(cars_list))
+            bot_loger.info(f"Длина 2 списка машин:"
+                           f"{len(cars_list)}")
             await cars_menu(message)
 
         @dp.message_handler(text='Больше 1 млн')
         async def cars_up_to_milion(message: types.Message):
             global cars_list, cars_list_up_INF
             cars_list = cars_list_up_INF
+            print(len(cars_list))
+            bot_loger.info(f"Длина 3 списка машин:"
+                           f"{len(cars_list)}")
             await cars_menu(message)
 
         async def cars_menu(message: types.Message):
             global photo_list, cars_list
 
+
             caption = f"Автомобиль: {cars_list[0][1]}\n" \
                       f"Цена: {cars_list[0][2]}\n" \
                       f"Описание:\n{cars_list[0][3]}"
             keyboard = get_car_keyboard()  # Page: 0
+            print(caption)
 
             s = select(database.Images_cars.link).where(
                 database.Images_cars.fk_link == cars_list[0][0])
@@ -155,15 +168,28 @@ def BOT(cars_list_up_300,
                           f"Цена: {cars_list[page_car][2]}\n" \
                           f"Описание:\n{cars_list[page_car][3]}\n" \
                           f"Cсылка: \n {cars_list[page_car][0]}"
+                if len(caption) > 1024:
+                    caption = \
+                    f"Автомобиль: {cars_list[page_car][1]}\n" \
+                    f"Цена: {cars_list[page_car][2]}\n" \
+                    f"Описание: К сожалению описание слишком длинное, " \
+                                f"вы можете ознакомиться с ним по ссылке на машину. \n" \
+                    f"Cсылка: \n {cars_list[page_car][0]}"
+
+                caption = caption.replace("<br>", '')
                 keyboard = get_car_keyboard(page_car=page_car,
                                             page_photo=page_photo)  # Page: 0
                 photo = InputMedia(type="photo",
                                    media=photo_list[page_photo][0],
-                                   caption=caption)
+                                   caption=caption,
+                                   parse_mode="HTML"
+                                   )
 
                 await callback.message.edit_media(photo, keyboard)
             except IndexError:
                 await callback.answer("Вы дошли до конца")
+            except BadRequest as exept:
+                bot_loger.error(exept.args)
 
     except Exception as ex_:
         bot_loger.error("Error while working with BOT:", ex_, traceback=True)
@@ -179,7 +205,8 @@ def write_lists(l1, l2, l3, lock):
     for i in result:
         l1.append(i)
 
-    s = select(database.Cars_ads).where(database.Cars_ads.price <= 1000000)
+    s = select(database.Cars_ads).where(
+        database.Cars_ads.price.between(300000, 1000000))
     result = database.get_cars(s, lock)
     for i in result:
         l2.append(i)
